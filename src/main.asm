@@ -16,7 +16,7 @@
 framecnt	DS.B	1	; Rolling frame counter from 0 to 255
         INCLUDE "zik_variables.asm"
 ptr = tt_ptr			; Reusing tt_ptr as temporary pointer
-	;INCLUDE "variables.asm"
+	INCLUDE "variables.asm"
         echo "Used RAM:", (* - $0080)d, "bytes"
 
 ;;;-----------------------------------------------------------------------------
@@ -37,7 +37,7 @@ ptr = tt_ptr			; Reusing tt_ptr as temporary pointer
 MAIN_CODE_START equ *
 init:   CLEAN_START		; Initializes Registers & Memory
         INCLUDE "zik_init.asm"
-	;jsr fx_init
+	jsr fx_init
 
 main_loop:	SUBROUTINE
 	VERTICAL_SYNC		; 4 scanlines Vertical Sync signal
@@ -47,14 +47,14 @@ main_loop:	SUBROUTINE
 	lda #39			; (/ (* 34.0 76) 64) = 40.375
 	sta TIM64T
         INCLUDE "zik_player.asm"
-	;jsr fx_vblank
+	jsr fx_vblank
 	jsr wait_timint
 
 .kernel:
 	; 248 Kernel lines
 	lda #19			; (/ (* 248.0 76) 1024) = 18.40
 	sta T1024T
-	;jsr fx_kernel		; scanline 33 - cycle 23
+	jsr fx_kernel		; scanline 33 - cycle 23
 	jsr wait_timint		; scanline 289 - cycle 30
 
 .overscan:
@@ -63,7 +63,7 @@ main_loop:	SUBROUTINE
 	sta TIM64T
 	;; Update counters
 	inc framecnt
-	;jsr fx_overscan
+	jsr fx_overscan
 	jsr wait_timint
 
 	jmp main_loop		; main_loop is far - scanline 308 - cycle 15
@@ -78,7 +78,7 @@ wait_timint:
 	echo "Main   size:", (* - MAIN_CODE_START)d, "bytes - Music player size"
 
 FX_START equ *
-	;INCLUDE "fx.asm"
+	INCLUDE "fx_sprite.asm"
 	echo "FX     size:", (* - FX_START)d, "bytes"
 
 	echo ""
