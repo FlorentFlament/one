@@ -11,17 +11,53 @@ fx_overscan:
 
 fx_vblank: SUBROUTINE
 	lda framecnt
-	REPEAT 3
+	REPEAT 2
 	lsr
 	REPEND
-	and #$03
+	and #$07
+	tax
+	lda pf_motion,X
 	sta pf_height
 	rts
+
+	MAC CHOOSE_COLOR
+	clc
+	sty ptr
+	lda framecnt
+	adc ptr
+	sta COLUPF
+	ENDM
+
 
 fx_kernel:	SUBROUTINE
 	;; Intialize colors
 	lda #$fe
 	sta COLUPF
+
+	lda pf_height
+	bne .draw_picture
+
+	;; If pf_height == 0, just draw lines
+	ldy #39
+.empty_pic:
+	sta WSYNC
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	CHOOSE_COLOR
+	REPEAT 5
+	sta WSYNC
+	REPEND
+	lda #$ff
+	sta PF0
+	sta PF1
+	sta PF2
+	dey
+	bpl .empty_pic
+	jmp .end
+
+.draw_picture:
 	ldy #39			; 30 lines. Y can be used to indirect fetch
 .outer:
 	;; 6 lines thick graphic lines (40 graphic lines)
@@ -31,6 +67,7 @@ fx_kernel:	SUBROUTINE
 	sta PF0
 	sta PF1
 	sta PF2
+	CHOOSE_COLOR
 	sta WSYNC
 	lda (pfpic_p0),Y
 	eor #$ff
@@ -112,6 +149,9 @@ fx_kernel:	SUBROUTINE
 ;;;
 ;;; DATA
 ;;;
+
+pf_motion:
+	dc.b 0, 1, 2, 3, 3, 2, 1, 0
 
 pf_40x40_credits_p0:
 	dc.b $00, $00, $00, $60, $f0, $30, $70, $60
