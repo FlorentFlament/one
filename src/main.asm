@@ -78,7 +78,7 @@ wait_timint:
 	echo "Main   size:", (* - MAIN_CODE_START)d, "bytes - Music player size"
 
 FX_START equ *
-	INCLUDE "fx.asm"
+	INCLUDE "fx_playfield.asm"
 	echo "FX     size:", (* - FX_START)d, "bytes"
 
 	echo ""
