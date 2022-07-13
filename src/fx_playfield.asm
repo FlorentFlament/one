@@ -11,10 +11,8 @@ fx_overscan:
 
 fx_vblank: SUBROUTINE
 	lda framecnt
-	REPEAT 2
 	lsr
-	REPEND
-	and #$07
+	and #$0f
 	tax
 	lda pf_motion,X
 	sta pf_height
@@ -43,7 +41,7 @@ fx_kernel:	SUBROUTINE
 	bne .draw_picture
 
 	;; If pf_height == 0, just draw lines
-	ldy #39
+	ldy #29
 .empty_pic:
 	sta WSYNC
 	lda #$00
@@ -51,7 +49,7 @@ fx_kernel:	SUBROUTINE
 	sta PF1
 	sta PF2
 	CHOOSE_COLOR
-	REPEAT 5
+	REPEAT 7
 	sta WSYNC
 	REPEND
 	lda #$ff
@@ -63,7 +61,7 @@ fx_kernel:	SUBROUTINE
 	jmp .end
 
 .draw_picture:
-	ldy #39			; 30 lines. Y can be used to indirect fetch
+	ldy #29			; 30 lines. Y can be used to indirect fetch
 .outer:
 	;; 6 lines thick graphic lines (40 graphic lines)
 	;; 1st and 2nd line to clear playfields + precompute inverted pixels
@@ -93,7 +91,7 @@ fx_kernel:	SUBROUTINE
 	eor #$ff
 	sta inv_p5
 	;; 4 lines remaining
-	ldx #3
+	ldx #5
 .inner_loop:
 	cpx pf_height		; value is in [1..3] included
 	sta WSYNC
@@ -156,7 +154,8 @@ fx_kernel:	SUBROUTINE
 ;;;
 
 pf_motion:
-	dc.b 0, 1, 2, 3, 3, 2, 1, 0
+	dc.b 0, 1, 2, 3, 3, 4, 4, 5
+	dc.b 5, 5, 4, 4, 3, 3, 2, 1
 
 pf_colors:
 	dc.b $20, $22, $24, $26, $28, $2a, $2c, $2e
