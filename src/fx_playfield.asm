@@ -6,14 +6,7 @@ fx_init:	SUBROUTINE
 	sta pfpic_p0,Y
 	dey
 	bpl .loop
-	rts
-
 fx_overscan:
-	lda framecnt
-	and #$03
-	bne .end
-	inc slow4x_cnt
-.end:	
 	rts
 
 fx_vblank: SUBROUTINE
@@ -30,11 +23,11 @@ fx_vblank: SUBROUTINE
 	MAC CHOOSE_COLOR
 	clc
 	sty ptr
-	lda slow4x_cnt
+	lda framecnt
+	lsr
+	lsr
 	adc ptr
-	lsr
-	lsr
-	and #$1f
+	and #$3f
 	tax
 	lda pf_colors,X
 	sta COLUPF
@@ -167,9 +160,13 @@ pf_motion:
 
 pf_colors:
 	dc.b $20, $22, $24, $26, $28, $2a, $2c, $2e
+	dc.b $2e, $2c, $2a, $28, $26, $24, $22, $20
 	dc.b $60, $62, $64, $66, $68, $6a, $6c, $6e ; rouge
+	dc.b $6e, $6c, $6a, $68, $66, $64, $62, $60 ; rouge
 	dc.b $90, $92, $94, $96, $98, $9a, $9c, $9e ; bleu
+	dc.b $9e, $9c, $9a, $98, $96, $94, $92, $90 ; bleu
 	dc.b $30, $32, $34, $36, $38, $3a, $3c, $3e ; vert
+	dc.b $3e, $3c, $3a, $38, $36, $34, $32, $30 ; vert
 	
 pfpic_circles_40x40_p0:
 	dc.b $00, $00, $00, $00, $00, $00, $00, $00
