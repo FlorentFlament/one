@@ -13,7 +13,7 @@
 
 	echo ""
 	echo "-RAM-"
-framecnt	DS.B	1	; Rolling frame counter from 0 to 255
+framecnt	DS.B	2	; 2 bytes rolling frame counter
         INCLUDE "zik_variables.asm"
 ptr = tt_ptr			; Reusing tt_ptr as temporary pointer
 	INCLUDE "variables.asm"
@@ -62,8 +62,11 @@ main_loop:	SUBROUTINE
 	lda #22			; (/ (* 26.0 76) 64) = 30.875
 	sta TIM64T
 	;; Update counters
-	inc framecnt
 	jsr fx_overscan
+	inc framecnt
+	bne .continue
+	inc framecnt + 1 	; if framecnt drops to 0
+.continue:
 	jsr wait_timint
 
 	jmp main_loop		; main_loop is far - scanline 308 - cycle 15
