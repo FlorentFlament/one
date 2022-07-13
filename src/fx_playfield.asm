@@ -2,7 +2,7 @@ fx_init:	SUBROUTINE
 	;; Copy 6 pointers i.e 12 bytes to pfpic memory address
 	ldy #11
 .loop:
-	lda pfpic_circles_40x40_ptr,Y
+	lda pfpic_atari_40x30_ptr,Y
 	sta pfpic_p0,Y
 	dey
 	bpl .loop
@@ -166,7 +166,7 @@ pf_colors:
 	dc.b $9e, $9c, $9a, $98, $96, $94, $92, $90 ; bleu
 	dc.b $30, $32, $34, $36, $38, $3a, $3c, $3e ; vert
 	dc.b $3e, $3c, $3a, $38, $36, $34, $32, $30 ; vert
-	
+
 pfpic_circles_40x40_p0:
 	dc.b $00, $00, $00, $00, $00, $00, $00, $00
 	dc.b $00, $80, $80, $c0, $c0, $e0, $e0, $e0
@@ -210,3 +210,42 @@ pfpic_circles_40x40_ptr:
 	dc.w pfpic_circles_40x40_p3
 	dc.w pfpic_circles_40x40_p4
 	dc.w pfpic_circles_40x40_p5
+
+
+pfpic_atari_40x30_p0:
+	dc.b $e0, $e0, $e0, $e0, $80, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+pfpic_atari_40x30_p1:
+	dc.b $80, $e0, $f8, $fc, $fe, $7f
+	dc.b $1f, $0f, $07, $03, $01, $01, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+pfpic_atari_40x30_p2:
+	dc.b $c0, $c0, $c0, $c0, $c0, $c0
+	dc.b $c1, $c3, $c3, $c7, $c7, $c7, $cf, $cf
+	dc.b $ce, $ce, $dc, $dc, $dc, $dc, $dc, $d8
+	dc.b $d8, $d8, $d8, $d8, $d8, $d8, $d8, $d8
+pfpic_atari_40x30_p3:
+	dc.b $30, $30, $30, $30, $30, $30
+	dc.b $30, $30, $30, $30, $30, $30, $30, $30
+	dc.b $30, $30, $b0, $b0, $b0, $b0, $b0, $b0
+	dc.b $b0, $b0, $b0, $b0, $b0, $b0, $b0, $b0
+pfpic_atari_40x30_p4:
+	dc.b $00, $00, $01, $03, $07, $0f
+	dc.b $1f, $3f, $3e, $7c, $78, $78, $f0, $f0
+	dc.b $e0, $e0, $c0, $c0, $c0, $c0, $c0, $80
+	dc.b $80, $80, $80, $80, $80, $80, $80, $80
+pfpic_atari_40x30_p5:
+	dc.b $78, $7e, $7f, $7f, $1f, $07
+	dc.b $01, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+pfpic_atari_40x30_ptr:
+	dc.w pfpic_atari_40x30_p0
+	dc.w pfpic_atari_40x30_p1
+	dc.w pfpic_atari_40x30_p2
+	dc.w pfpic_atari_40x30_p3
+	dc.w pfpic_atari_40x30_p4
+	dc.w pfpic_atari_40x30_p5
