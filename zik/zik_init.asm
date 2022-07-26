@@ -16,7 +16,7 @@
 ; limitations under the License.
 
 ; Song author: Glafouk
-; Song name: Glafouk
+; Song name: Ngingedwa ebumnyameni
 
 ; @com.wudsn.ide.asm.hardware=ATARI2600
 
@@ -29,7 +29,7 @@
 ; =====================================================================
         lda #0
         sta tt_cur_pat_index_c0
-        lda #46
+        lda #42
         sta tt_cur_pat_index_c1
         ; the rest should be 0 already from startup code. If not,
         ; set the following variables to 0 manually:
