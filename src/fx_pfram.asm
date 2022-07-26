@@ -1,6 +1,10 @@
 fx_init:	SUBROUTINE
 	lda #$01		; Reflect playfield
 	sta CTRLPF
+
+	lda #$80
+	sta fb_p1+15
+	sta fb_p1+16
 fx_overscan:
 	rts
 
@@ -11,7 +15,7 @@ fx_overscan:
 	lda sin_table,X
 	sta ptr
 	;; X coordinate
-	lda #32 		; Quarter table
+	lda #32		; Quarter table
 	clc
 	adc framecnt
 	and #$7f
@@ -20,7 +24,7 @@ fx_overscan:
 	tax
 
 	;; update appropriate bit in cur_p0 cur_p1
-	lda #$80
+	lda #$40
 	sta cur_p0
 	lda #$00
 	sta cur_p1
@@ -29,14 +33,16 @@ fx_overscan:
 	beq .end
 .shift_loop:	
 	lsr cur_p0		; P0 7 -> 0
-	ror cur_p1		; P1 0 <- 7
+	rol cur_p1		; P1 0 <- 7
 	dex
 	bne .shift_loop
 
 	ldx ptr
-	lda cur_p0
+	lda fb_p0,X
+	ora cur_p0
 	sta fb_p0,X
-	lda cur_p1
+	lda fb_p1,X
+	ora cur_p1
 	sta fb_p1,X
 .end:	
 	ENDM

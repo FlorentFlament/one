@@ -8,8 +8,8 @@ inv_p5		DS.B	1
 
 pf_height	DS.B	1
 
-fb_p0	DS.B	15
-fb_p1	DS.B	15
+fb_p0	DS.B	30
+fb_p1	DS.B	30
 
 cur_p0	DS.B	1
 cur_p1	DS.B	1
