@@ -16,7 +16,7 @@
 framecnt	DS.B	2	; 2 bytes rolling frame counter
         INCLUDE "zik_variables.asm"
 ptr = tt_ptr			; Reusing tt_ptr as temporary pointer
-	INCLUDE "variables.asm"
+	INCLUDE "fx_pfram_vars.asm"
         echo "Used RAM:", (* - $0080)d, "bytes"
 
 ;;;-----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ wait_timint:
 	echo "Main   size:", (* - MAIN_CODE_START)d, "bytes - Music player size"
 
 FX_START equ *
-	INCLUDE "fx_playfield.asm"
+	INCLUDE "fx_pfram.asm"
 	echo "FX     size:", (* - FX_START)d, "bytes"
 
 	echo ""
