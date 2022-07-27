@@ -10,14 +10,16 @@ fx_overscan:
 
 	MAC UPDATE_FRAMEBUFFER
 	lda framecnt
+	lsr
 	and #$7f
 	tax
 	lda sin_table,X
 	sta ptr
 	;; X coordinate
-	lda #32		; Quarter table
+	lda framecnt
+	lsr
 	clc
-	adc framecnt
+	adc #32			; quarter table
 	and #$7f
 	tax
 	lda sin_table,X
