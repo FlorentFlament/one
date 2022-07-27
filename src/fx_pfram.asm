@@ -31,12 +31,13 @@ fx_overscan:
 
 	cpx #0
 	beq .end
-.shift_loop:	
+.shift_loop:
 	lsr cur_p0		; P0 7 -> 0
 	rol cur_p1		; P1 0 <- 7
 	dex
 	bne .shift_loop
 
+.end:
 	ldx ptr
 	lda fb_p0,X
 	ora cur_p0
@@ -44,9 +45,8 @@ fx_overscan:
 	lda fb_p1,X
 	ora cur_p1
 	sta fb_p1,X
-.end:	
 	ENDM
-	
+
 fx_vblank: SUBROUTINE
 	;; Height of bars
 	lda framecnt
@@ -54,7 +54,7 @@ fx_vblank: SUBROUTINE
 	and #$0f
 	tax
 	lda pf_motion,X
-	lda #5
+	;lda #5
 	sta pf_height
 
 	UPDATE_FRAMEBUFFER
@@ -190,19 +190,19 @@ pf_colors:
 	dc.b $9c, $9a, $98, $96, $94 ; bleu
 
 sin_table:
-	dc.b $0f, $10, $10, $11, $12, $13, $13, $14
-	dc.b $15, $15, $16, $17, $17, $18, $19, $19
-	dc.b $1a, $1a, $1b, $1b, $1b, $1c, $1c, $1d
-	dc.b $1d, $1d, $1d, $1e, $1e, $1e, $1e, $1e
-	dc.b $1e, $1e, $1e, $1e, $1e, $1e, $1d, $1d
-	dc.b $1d, $1d, $1c, $1c, $1b, $1b, $1b, $1a
-	dc.b $1a, $19, $19, $18, $17, $17, $16, $15
-	dc.b $15, $14, $13, $13, $12, $11, $10, $10
-	dc.b $0f, $0e, $0e, $0d, $0c, $0b, $0b, $0a
-	dc.b $09, $09, $08, $07, $07, $06, $05, $05
-	dc.b $04, $04, $03, $03, $03, $02, $02, $01
+	dc.b $0e, $0f, $10, $11, $11, $12, $13, $13
+	dc.b $14, $15, $15, $16, $17, $17, $18, $18
+	dc.b $19, $19, $1a, $1a, $1b, $1b, $1b, $1c
+	dc.b $1c, $1c, $1c, $1d, $1d, $1d, $1d, $1d
+	dc.b $1d, $1d, $1d, $1d, $1d, $1d, $1c, $1c
+	dc.b $1c, $1c, $1b, $1b, $1b, $1a, $1a, $19
+	dc.b $19, $18, $18, $17, $17, $16, $15, $15
+	dc.b $14, $13, $13, $12, $11, $11, $10, $0f
+	dc.b $0f, $0e, $0d, $0c, $0c, $0b, $0a, $0a
+	dc.b $09, $08, $08, $07, $06, $06, $05, $05
+	dc.b $04, $04, $03, $03, $02, $02, $02, $01
 	dc.b $01, $01, $01, $00, $00, $00, $00, $00
 	dc.b $00, $00, $00, $00, $00, $00, $01, $01
-	dc.b $01, $01, $02, $02, $03, $03, $03, $04
-	dc.b $04, $05, $05, $06, $07, $07, $08, $09
-	dc.b $09, $0a, $0b, $0b, $0c, $0d, $0e, $0e
+	dc.b $01, $01, $02, $02, $02, $03, $03, $04
+	dc.b $04, $05, $05, $06, $06, $07, $08, $08
+	dc.b $09, $0a, $0a, $0b, $0c, $0c, $0d, $0e
