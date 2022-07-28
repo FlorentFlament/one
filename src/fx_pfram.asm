@@ -1,53 +1,134 @@
 fx_init:	SUBROUTINE
 	lda #$01		; Reflect playfield
 	sta CTRLPF
-
-	lda #$80
-	sta fb_p1+15
-	sta fb_p1+16
-fx_overscan:
 	rts
 
-	MAC UPDATE_FRAMEBUFFER
-	lda framecnt
-	lsr
-	and #$7f
+fx_overscan:
+	;; Clear framebuffer
+	lda #$00
+	ldx #29
+.clear_loop:
+	sta fb_p0,X
+	sta fb_p1,X
+	dex
+	bpl .clear_loop
+
+	lda framecnt+1
+	and #$1f
 	tax
-	lda sin_table,X
-	sta ptr
+	lda x_step_table,X
+	sta x_step
+	lda y_step_table,X
+	sta y_step
+.end:
+	rts
+
+;;; X and Y shift should be in ptr and ptr+1 respectively
+;;; At the end X and Y coordinante are in ptr and ptr+1
+fb_fetch_point:	SUBROUTINE
 	;; X coordinate
 	lda framecnt
 	lsr
 	clc
-	adc #32			; quarter table
-	and #$7f
+	adc ptr		; was 32
+	and #127
 	tax
 	lda sin_table,X
+	sta ptr
+	;; Y coordinate
+	lda framecnt
+	lsr
+	clc
+	adc ptr+1	; was 64
+	and #127
 	tax
+	lda sin_table,X
+	sta ptr+1
+	tax
+	rts
 
+;;; X and Y coordinante are in ptr and ptr+1
+fb_draw_point:	SUBROUTINE
 	;; update appropriate bit in cur_p0 cur_p1
-	lda #$40
-	sta cur_p0
 	lda #$00
+	sta cur_p0
 	sta cur_p1
 
+	lda ptr
+	cmp #16
+	bcc .no_mirror
+	lda #29
+	sec
+	sbc ptr
+.no_mirror:
+	cmp #8
+	bcc .first_byte
+	sec
+	sbc #8
+	tax
+	lda #$01
 	cpx #0
-	beq .end
-.shift_loop:
-	lsr cur_p0		; P0 7 -> 0
-	rol cur_p1		; P1 0 <- 7
+	beq .second_byte_end
+.second_byte_shift:
+	asl
 	dex
-	bne .shift_loop
+	bne .second_byte_shift
+.second_byte_end:
+	sta cur_p1
+	beq .end
+.first_byte:
+	tax
+	lda #$40
+	cpx #0
+	beq .first_byte_end
+.first_byte_shift:
+	lsr		; P0 7 -> 0
+	dex
+	bne .first_byte_shift
+.first_byte_end:
+	sta cur_p0
 
 .end:
-	ldx ptr
+	ldx ptr+1
 	lda fb_p0,X
 	ora cur_p0
 	sta fb_p0,X
 	lda fb_p1,X
 	ora cur_p1
 	sta fb_p1,X
+	rts
+
+;;; Updates ptr, ptr+1
+;;; And cur_p0, cur_p1
+	MAC FETCH_N_DRAW
+	lda {1}
+	sta ptr
+	lda {2}
+	sta ptr+1
+	jsr fb_fetch_point
+	jsr fb_draw_point
 	ENDM
+
+fb_rotating_points:	SUBROUTINE
+	lda #0
+	sta x_shift
+	lda #32
+	sta y_shift
+
+	ldy #9
+.fetch_draw_loop:
+	FETCH_N_DRAW x_shift, y_shift
+	lda x_step
+	clc
+	adc x_shift
+	sta x_shift
+	lda y_step
+	clc
+	adc y_shift
+	sta y_shift
+	dey
+	bpl .fetch_draw_loop
+	rts
 
 fx_vblank: SUBROUTINE
 	;; Height of bars
@@ -56,10 +137,15 @@ fx_vblank: SUBROUTINE
 	and #$0f
 	tax
 	lda pf_motion,X
-	;lda #5
+	lda #5
 	sta pf_height
 
-	UPDATE_FRAMEBUFFER
+	jsr fb_rotating_points
+
+	;; self
+	lda #$80
+	sta fb_p1+14
+	sta fb_p1+15
 	rts
 
 	MAC CHOOSE_COLOR
@@ -182,6 +268,18 @@ fx_kernel:	SUBROUTINE
 pf_motion:
 	dc.b 0, 1, 2, 3, 3, 4, 4, 5
 	dc.b 5, 5, 4, 4, 3, 3, 2, 1
+
+x_step_table:
+	dc.b  4,  4,  4,  4,  4,  4,  4,  4
+	dc.b  4,  4,  4,  4,  4,  4,  4,  4
+	dc.b  4,  5,  6,  7,  8,  9, 10, 11
+	dc.b 12, 11, 10,  9,  8,  7,  6,  5
+
+y_step_table:
+	dc.b  4,  5,  6,  7,  8,  9, 10, 11
+	dc.b 12, 11, 10,  9,  8,  7,  6,  5
+	dc.b  4,  4,  4,  4,  4,  4,  4,  4
+	dc.b  4,  4,  4,  4,  4,  4,  4,  4
 
 pf_colors:
 	dc.b $06, $08, $0a, $0c, $0e ; blank
