@@ -1,9 +1,30 @@
+; A must contain the previous value of the xor_shift
+; A contains the new xor_shift value on return
+; Note: ptr is overwritten
+	MAC XOR_SHIFT
+	sta ptr
+	asl
+	eor ptr
+	sta ptr
+	lsr
+	eor ptr
+	sta ptr
+	asl
+	asl
+	eor ptr
+	ENDM
+
 fx_init:	SUBROUTINE
 	lda #$01		; Reflect playfield
 	sta CTRLPF
+	sta prng
 	rts
 
 fx_overscan:
+	lda framecnt
+	and #$80
+	bne .end_clear
+
 	;; Clear framebuffer
 	lda #$00
 	ldx #29
@@ -12,6 +33,7 @@ fx_overscan:
 	sta fb_p1,X
 	dex
 	bpl .clear_loop
+.end_clear:
 
 	lda framecnt+1
 	and #$1f
@@ -20,7 +42,6 @@ fx_overscan:
 	sta x_step
 	lda y_step_table,X
 	sta y_step
-.end:
 	rts
 
 ;;; X and Y shift should be in ptr and ptr+1 respectively
@@ -133,12 +154,14 @@ fb_rotating_points:	SUBROUTINE
 fx_vblank: SUBROUTINE
 	;; Height of bars
 	lda framecnt
-	lsr
-	and #$0f
-	tax
-	lda pf_motion,X
-	lda #5
+	and #$03
+	bne .skip
+	lda prng
+	XOR_SHIFT
+	sta prng
+	and #$07
 	sta pf_height
+.skip:
 
 	jsr fb_rotating_points
 

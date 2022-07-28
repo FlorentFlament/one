@@ -2,6 +2,7 @@
 inv_p0		DS.B	1
 inv_p1		DS.B	1
 
+prng		DS.B	1
 pf_height	DS.B	1
 
 fb_p0	DS.B	30
