@@ -35,6 +35,11 @@ ptr = tt_ptr			; Reusing tt_ptr as temporary pointer
 	echo "-CODE-"
 
 MAIN_CODE_START equ *
+
+zik_player:
+        INCLUDE "zik_player.asm"
+	rts
+
 init:   CLEAN_START		; Initializes Registers & Memory
         INCLUDE "zik_init.asm"
 	jsr fx_init
@@ -46,7 +51,18 @@ main_loop:	SUBROUTINE
 	; 34 VBlank lines (76 cycles/line)
 	lda #39			; (/ (* 34.0 76) 64) = 40.375
 	sta TIM64T
-        INCLUDE "zik_player.asm"
+	lda fx_state
+	cmp #5
+	bpl .no_zik
+.do_play:
+	jsr zik_player
+	jmp .continue_vblank
+.no_zik:
+	lda #$00
+	sta AUDV0
+	sta AUDV1
+
+.continue_vblank:
 	jsr fx_vblank
 	jsr wait_timint
 

@@ -45,35 +45,55 @@ fx_state1:	SUBROUTINE
 	sta flags
 	inc fx_state
 	beq .end		; inconditional
-.more_pixels:	
+.more_pixels:
 	lda framecnt
 	and #$7f
 	bne .end
 	inc pixels_cnt
-.end:	
+.end:
 	rts
 
 fx_state2:	SUBROUTINE	; framecnt+1 value is around 7
 	lda framecnt+1
-	cmp #$08
-	bne .end
+	cmp #$0c
+	bcc .end
+	lda framecnt
+	cmp #$49
+	bcc .end
 	inc fx_state
 .end:
 	rts
 
 fx_state3:	SUBROUTINE
 	;; Alternate tracing and no tracing
+	;; End of fx ?
+	lda framecnt+1
+	and #$1f
+	bne .continue
+	inc fx_state
+	lda #$1			; Only one pixel
+	sta pixels_cnt		;
+	lda #$0			; ensure screen is cleared
+	bne .end
+.continue:
 	lda framecnt+1
 	and #$01
 	beq .no_traces
 	lda flags
 	ora #$01		; bit0 (clear fb)->1
 	bne .end
-.no_traces:	
+.no_traces:
 	lda flags
 	and #$fe		; bit0 ->0
 .end:
 	sta flags
+	rts
+
+fx_state4:
+	lda #$1			; don't clear screen anymore
+	sta flags
+	inc fx_state
+fx_state5:
 	rts
 
 fx_state_ptrs:
@@ -81,7 +101,9 @@ fx_state_ptrs:
 	.word fx_state1 - 1
 	.word fx_state2 - 1
 	.word fx_state3 - 1
-	
+	.word fx_state4 - 1
+	.word fx_state5 - 1
+
 call_current_state:	SUBROUTINE
 	lda fx_state
 	asl
@@ -116,8 +138,8 @@ fx_overscan:
 	lda flags
 	ora #$04		; bit2->1
 	sta flags
-.skip_kernel_update:	
-	
+.skip_kernel_update:
+
 	;; Clear framebuffer or not
 	lda flags
 	and #$01
@@ -132,7 +154,14 @@ fx_overscan:
 .end_clear:
 
 	;; Shape of trajectory
+	lda fx_state
+	cmp #5
+	bpl .final_state
 	lda framecnt+1
+	jmp .state_set
+.final_state:
+	lda #0
+.state_set:
 	and #$1f
 	tax
 	lda x_step_table,X
@@ -147,7 +176,7 @@ fx_overscan:
 	lda #3
 	sta pf_height
 	bne .skip		; unconditional
-.random_height:	
+.random_height:
 	lda framecnt
 	and #$03
 	bne .skip
@@ -294,13 +323,30 @@ fx_vblank: SUBROUTINE
 
 
 fx_kernel:	SUBROUTINE
+	lda fx_state
+	cmp #2
+	bpl .second_half
+	cmp #1
+	bpl .glitchy
+	jmp fx_kernel_blocks
+
+.second_half:
+	cmp #4
+	bmi .glitchest
+.end_one:
+	jmp fx_kernel_bars
+.glitchest:
+	lda flags
+	and #$04
+	bne fx_kernel_bars
+	jmp fx_kernel_blocks
+.glitchy:
 	lda flags
 	and #$04
 	bne .trick
+	beq fx_kernel_bars	; unconditional
+.trick:
 	jmp fx_kernel_blocks
-.trick:	
-	jmp fx_kernel_bars
-
 fx_kernel_bars:	SUBROUTINE
 	lda pf_height
 	bne .draw_picture
