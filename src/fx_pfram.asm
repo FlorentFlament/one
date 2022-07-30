@@ -58,6 +58,17 @@ fx_state2:	SUBROUTINE
 	rts
 
 fx_state3:	SUBROUTINE
+	lda framecnt+1
+	cmp #$0c
+	bcc .end
+	lda framecnt
+	cmp #$49
+	bcc .end
+	inc fx_state
+.end:
+	rts
+
+fx_state4:	SUBROUTINE
 	;; Alternate tracing and no tracing
 	;; End of fx ?
 	lda framecnt+1
@@ -82,11 +93,11 @@ fx_state3:	SUBROUTINE
 	sta flags
 	rts
 
-fx_state4:
+fx_state5:
 	lda #$1			; don't clear screen anymore
 	sta flags
 	inc fx_state
-fx_state5:
+fx_state6:
 	rts
 
 fx_state_ptrs:
@@ -96,6 +107,7 @@ fx_state_ptrs:
 	.word fx_state3 - 1
 	.word fx_state4 - 1
 	.word fx_state5 - 1
+	.word fx_state6 - 1
 
 call_current_state:	SUBROUTINE
 	lda fx_state
@@ -148,7 +160,7 @@ fx_overscan:
 
 	;; Shape of trajectory
 	lda fx_state
-	cmp #5
+	cmp #6
 	bpl .final_state
 	lda framecnt+1
 	jmp .state_set
@@ -324,7 +336,7 @@ fx_kernel:	SUBROUTINE
 	jmp fx_kernel_blocks
 
 .second_half:
-	cmp #4
+	cmp #5
 	bmi .glitchest
 .end_one:
 	jmp fx_kernel_bars
