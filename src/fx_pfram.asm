@@ -66,10 +66,12 @@ fx_state3:	SUBROUTINE
 	lda framecnt+1
 	and #$01
 	beq .no_traces
-	lda #$03
+	lda flags
+	ora #$01		; bit0 (clear fb)->1
 	bne .end
 .no_traces:	
-	lda #$02
+	lda flags
+	and #$fe		; bit0 ->0
 .end:
 	sta flags
 	rts
@@ -92,6 +94,29 @@ call_current_state:	SUBROUTINE
 
 fx_overscan:
 	jsr call_current_state
+
+	;; update random number
+	lda prng
+	XOR_SHIFT
+	sta prng
+
+	;;  Choose kernel to display
+	lda framecnt
+	and #$3
+	bne .skip_kernel_update
+	lda prng		; Update flag randomly
+	and #$03
+	bne .most_probable
+.less_probable:
+	lda flags
+	and #$fb		; bit2->0
+	sta flags
+	jmp .skip_kernel_update
+.most_probable:
+	lda flags
+	ora #$04		; bit2->1
+	sta flags
+.skip_kernel_update:	
 	
 	;; Clear framebuffer or not
 	lda flags
@@ -115,6 +140,7 @@ fx_overscan:
 	lda y_step_table,X
 	sta y_step
 
+	;; Height of bars
 	lda flags
 	and #$02
 	bne .random_height
@@ -122,13 +148,10 @@ fx_overscan:
 	sta pf_height
 	bne .skip		; unconditional
 .random_height:	
-	;; Height of bars
 	lda framecnt
 	and #$03
 	bne .skip
 	lda prng
-	XOR_SHIFT
-	sta prng
 	and #$07
 	sta pf_height
 .skip:
@@ -271,6 +294,14 @@ fx_vblank: SUBROUTINE
 
 
 fx_kernel:	SUBROUTINE
+	lda flags
+	and #$04
+	bne .trick
+	jmp fx_kernel_blocks
+.trick:	
+	jmp fx_kernel_bars
+
+fx_kernel_bars:	SUBROUTINE
 	lda pf_height
 	bne .draw_picture
 

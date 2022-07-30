@@ -19,4 +19,5 @@ y_step	DS.B	1
 fx_state	DS.B	1
 flags		DS.B	1	; bit 0 -> clear frame buffer
 				; bit 1 -> Random height
+				; bit 2 -> kernel
 pixels_cnt	DS.B	1	; moving pixels count
