@@ -1,7 +1,7 @@
 ; A must contain the previous value of the xor_shift
 ; A contains the new xor_shift value on return
 ; Note: ptr is overwritten
-	MAC XOR_SHIFT
+    MAC XOR_SHIFT
 	sta ptr
 	asl
 	eor ptr
@@ -12,20 +12,91 @@
 	asl
 	asl
 	eor ptr
-	ENDM
+    ENDM
 
 fx_init:	SUBROUTINE
-	lda #$01		; Reflect playfield
-	sta CTRLPF
-	sta prng
+	lda #$01
+	sta CTRLPF	; Reflect playfield
+	sta prng	; random number generator seed
+
+	lda #$00
+	sta pixels_cnt	; moving pixels count - start with 1 pixel
+	lda #$01	; start by tracing trajectory
+	sta flags
+	rts
+
+fx_state0:	SUBROUTINE
+	lda framecnt+1
+	cmp #1
+	bcc .end
+	lda flags
+	and #$fe		; Remove traces
+	sta flags
+	inc fx_state
+.end:
+	rts
+
+fx_state1:	SUBROUTINE
+	lda pixels_cnt
+	cmp #11
+	bne .more_pixels
+	lda flags
+	ora #$02		; Ramdom height
+	sta flags
+	inc fx_state
+	beq .end		; inconditional
+.more_pixels:	
+	lda framecnt
+	and #$7f
+	bne .end
+	inc pixels_cnt
+.end:	
+	rts
+
+fx_state2:	SUBROUTINE	; framecnt+1 value is around 7
+	lda framecnt+1
+	cmp #$08
+	bne .end
+	inc fx_state
+.end:
+	rts
+
+fx_state3:	SUBROUTINE
+	;; Alternate tracing and no tracing
+	lda framecnt+1
+	and #$01
+	beq .no_traces
+	lda #$03
+	bne .end
+.no_traces:	
+	lda #$02
+.end:
+	sta flags
+	rts
+
+fx_state_ptrs:
+	.word fx_state0 - 1
+	.word fx_state1 - 1
+	.word fx_state2 - 1
+	.word fx_state3 - 1
+	
+call_current_state:	SUBROUTINE
+	lda fx_state
+	asl
+	tax
+	lda fx_state_ptrs+1,X
+	pha
+	lda fx_state_ptrs,X
+	pha
 	rts
 
 fx_overscan:
-	lda framecnt
-	and #$80
+	jsr call_current_state
+	
+	;; Clear framebuffer or not
+	lda flags
+	and #$01
 	bne .end_clear
-
-	;; Clear framebuffer
 	lda #$00
 	ldx #29
 .clear_loop:
@@ -35,6 +106,7 @@ fx_overscan:
 	bpl .clear_loop
 .end_clear:
 
+	;; Shape of trajectory
 	lda framecnt+1
 	and #$1f
 	tax
@@ -42,11 +114,29 @@ fx_overscan:
 	sta x_step
 	lda y_step_table,X
 	sta y_step
+
+	lda flags
+	and #$02
+	bne .random_height
+	lda #3
+	sta pf_height
+	bne .skip		; unconditional
+.random_height:	
+	;; Height of bars
+	lda framecnt
+	and #$03
+	bne .skip
+	lda prng
+	XOR_SHIFT
+	sta prng
+	and #$07
+	sta pf_height
+.skip:
 	rts
 
 ;;; X and Y shift should be in ptr and ptr+1 respectively
 ;;; At the end X and Y coordinante are in ptr and ptr+1
-fb_fetch_point:	SUBROUTINE
+    MAC FB_FETCH_POINT
 	;; X coordinate
 	lda framecnt
 	lsr
@@ -66,10 +156,10 @@ fb_fetch_point:	SUBROUTINE
 	lda sin_table,X
 	sta ptr+1
 	tax
-	rts
+    ENDM
 
 ;;; X and Y coordinante are in ptr and ptr+1
-fb_draw_point:	SUBROUTINE
+    MAC FB_DRAW_POINT
 	;; update appropriate bit in cur_p0 cur_p1
 	lda #$00
 	sta cur_p0
@@ -117,26 +207,26 @@ fb_draw_point:	SUBROUTINE
 	lda fb_p1,X
 	ora cur_p1
 	sta fb_p1,X
-	rts
+    ENDM
 
 ;;; Updates ptr, ptr+1
 ;;; And cur_p0, cur_p1
-	MAC FETCH_N_DRAW
+    MAC FETCH_N_DRAW
 	lda {1}
 	sta ptr
 	lda {2}
 	sta ptr+1
-	jsr fb_fetch_point
-	jsr fb_draw_point
-	ENDM
+	FB_FETCH_POINT
+	FB_DRAW_POINT
+    ENDM
 
-fb_rotating_points:	SUBROUTINE
+    MAC FB_ROTATING_POINTS
 	lda #0
 	sta x_shift
 	lda #32
 	sta y_shift
 
-	ldy #9
+	ldy pixels_cnt		; up to #11
 .fetch_draw_loop:
 	FETCH_N_DRAW x_shift, y_shift
 	lda x_step
@@ -149,29 +239,17 @@ fb_rotating_points:	SUBROUTINE
 	sta y_shift
 	dey
 	bpl .fetch_draw_loop
-	rts
+    ENDM
 
 fx_vblank: SUBROUTINE
-	;; Height of bars
-	lda framecnt
-	and #$03
-	bne .skip
-	lda prng
-	XOR_SHIFT
-	sta prng
-	and #$07
-	sta pf_height
-.skip:
-
-	jsr fb_rotating_points
-
+	FB_ROTATING_POINTS
 	;; self
 	lda #$80
 	sta fb_p1+14
 	sta fb_p1+15
 	rts
 
-	MAC CHOOSE_COLOR
+    MAC CHOOSE_COLOR
 	lda framecnt+1
 	sta ptr
 	lda framecnt
@@ -189,14 +267,10 @@ fx_vblank: SUBROUTINE
 	tax
 	lda pf_colors,X
 	sta COLUPF
-	ENDM
+    ENDM
 
 
 fx_kernel:	SUBROUTINE
-	;; Intialize colors
-	lda #$fe
-	sta COLUPF
-
 	lda pf_height
 	bne .draw_picture
 
@@ -276,6 +350,37 @@ fx_kernel:	SUBROUTINE
 	jmp .outer
 
 .end:
+	sta WSYNC
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	sta COLUPF
+	rts
+
+fx_kernel_blocks:	SUBROUTINE
+	ldy #29			; 30 lines. Y can be used to indirect fetch
+.outer:
+	sta WSYNC
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	CHOOSE_COLOR
+	ldx #6
+.inner_loop:
+	sta WSYNC
+	lda #$00
+	sta PF0
+	lda fb_p0,Y
+	sta PF1
+	lda fb_p1,Y
+	sta PF2
+	dex
+	bpl .inner_loop
+	dey
+	bpl .outer
+
 	sta WSYNC
 	lda #$00
 	sta PF0

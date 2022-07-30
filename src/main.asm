@@ -54,7 +54,7 @@ main_loop:	SUBROUTINE
 	; 248 Kernel lines
 	lda #19			; (/ (* 248.0 76) 1024) = 18.40
 	sta T1024T
-	jsr fx_kernel		; scanline 33 - cycle 23
+	jsr fx_kernel_blocks		; scanline 33 - cycle 23
 	jsr wait_timint		; scanline 289 - cycle 30
 
 .overscan:
@@ -62,11 +62,11 @@ main_loop:	SUBROUTINE
 	lda #22			; (/ (* 26.0 76) 64) = 30.875
 	sta TIM64T
 	;; Update counters
-	jsr fx_overscan
 	inc framecnt
 	bne .continue
 	inc framecnt + 1 	; if framecnt drops to 0
 .continue:
+	jsr fx_overscan
 	jsr wait_timint
 
 	jmp main_loop		; main_loop is far - scanline 308 - cycle 15
