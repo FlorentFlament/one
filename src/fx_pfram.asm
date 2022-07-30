@@ -37,6 +37,10 @@ fx_state0:	SUBROUTINE
 	rts
 
 fx_state1:	SUBROUTINE
+	inc fx_state
+	rts
+
+fx_state2:	SUBROUTINE
 	lda pixels_cnt
 	cmp #11
 	bne .more_pixels
@@ -50,17 +54,6 @@ fx_state1:	SUBROUTINE
 	and #$7f
 	bne .end
 	inc pixels_cnt
-.end:
-	rts
-
-fx_state2:	SUBROUTINE	; framecnt+1 value is around 7
-	lda framecnt+1
-	cmp #$0c
-	bcc .end
-	lda framecnt
-	cmp #$49
-	bcc .end
-	inc fx_state
 .end:
 	rts
 
@@ -324,9 +317,9 @@ fx_vblank: SUBROUTINE
 
 fx_kernel:	SUBROUTINE
 	lda fx_state
-	cmp #2
+	cmp #3
 	bpl .second_half
-	cmp #1
+	cmp #2
 	bpl .glitchy
 	jmp fx_kernel_blocks
 
