@@ -252,13 +252,18 @@ tt_pattern8:
         dc.b $28, $08, $40, $41, $29, $44, $28, $42
         dc.b $00
 
-; intro
+; vide
 tt_pattern9:
+        dc.b $08, $08, $08, $08, $08, $08, $08, $08
+        dc.b $00
+
+; intro
+tt_pattern10:
         dc.b $12, $08, $12, $08, $12, $12, $12, $08
         dc.b $00
 
 ; drum0a
-tt_pattern10:
+tt_pattern11:
         dc.b $12, $12, $11, $11, $13, $08, $11, $12
         dc.b $11, $11, $12, $11, $13, $08, $11, $11
         dc.b $12, $12, $11, $11, $13, $08, $11, $12
@@ -266,7 +271,7 @@ tt_pattern10:
         dc.b $00
 
 ; drum0b
-tt_pattern11:
+tt_pattern12:
         dc.b $12, $12, $11, $11, $13, $08, $11, $12
         dc.b $11, $11, $12, $11, $13, $08, $11, $11
         dc.b $12, $12, $11, $11, $13, $08, $11, $12
@@ -274,7 +279,7 @@ tt_pattern11:
         dc.b $00
 
 ; drum0c
-tt_pattern12:
+tt_pattern13:
         dc.b $12, $12, $11, $11, $13, $08, $11, $12
         dc.b $11, $11, $12, $11, $13, $08, $11, $11
         dc.b $11, $11, $11, $11, $11, $11, $11, $12
@@ -282,7 +287,7 @@ tt_pattern12:
         dc.b $00
 
 ; drum0a+mel0a
-tt_pattern13:
+tt_pattern14:
         dc.b $12, $12, $63, $64, $13, $69, $68, $12
         dc.b $22, $61, $12, $62, $13, $60, $62, $61
         dc.b $12, $12, $68, $67, $13, $08, $69, $12
@@ -290,7 +295,7 @@ tt_pattern13:
         dc.b $00
 
 ; drum0b+mel0a
-tt_pattern14:
+tt_pattern15:
         dc.b $12, $12, $63, $64, $13, $69, $68, $12
         dc.b $22, $61, $12, $62, $13, $60, $62, $61
         dc.b $12, $12, $68, $67, $13, $08, $69, $12
@@ -298,7 +303,7 @@ tt_pattern14:
         dc.b $00
 
 ; drum0b+mel0b
-tt_pattern15:
+tt_pattern16:
         dc.b $12, $12, $60, $61, $13, $62, $61, $12
         dc.b $22, $61, $12, $64, $13, $65, $64, $67
         dc.b $12, $12, $61, $60, $13, $08, $62, $12
@@ -306,7 +311,7 @@ tt_pattern15:
         dc.b $00
 
 ; drum0c+mel0b
-tt_pattern16:
+tt_pattern17:
         dc.b $12, $12, $60, $61, $13, $62, $61, $12
         dc.b $22, $61, $12, $64, $13, $65, $64, $11
         dc.b $11, $11, $11, $60, $66, $65, $62, $12
@@ -314,11 +319,19 @@ tt_pattern16:
         dc.b $00
 
 ; drum0d+mela
-tt_pattern17:
+tt_pattern18:
         dc.b $63, $11, $63, $11, $11, $63, $62, $11
         dc.b $62, $08, $08, $11, $11, $11, $11, $11
         dc.b $60, $62, $61, $11, $65, $08, $64, $12
         dc.b $11, $11, $12, $11, $13, $12, $12, $12
+        dc.b $00
+
+; drum0d+melaOutro
+tt_pattern19:
+        dc.b $63, $11, $63, $11, $11, $63, $62, $11
+        dc.b $62, $08, $08, $11, $11, $11, $11, $11
+        dc.b $60, $62, $61, $11, $65, $08, $64, $08
+        dc.b $08, $08, $12, $12, $12, $31, $20, $31
         dc.b $00
 
 
@@ -343,13 +356,15 @@ tt_PatternPtrLo:
         dc.b <tt_pattern4, <tt_pattern5, <tt_pattern6, <tt_pattern7
         dc.b <tt_pattern8, <tt_pattern9, <tt_pattern10, <tt_pattern11
         dc.b <tt_pattern12, <tt_pattern13, <tt_pattern14, <tt_pattern15
-        dc.b <tt_pattern16, <tt_pattern17
+        dc.b <tt_pattern16, <tt_pattern17, <tt_pattern18, <tt_pattern19
+
 tt_PatternPtrHi:
         dc.b >tt_pattern0, >tt_pattern1, >tt_pattern2, >tt_pattern3
         dc.b >tt_pattern4, >tt_pattern5, >tt_pattern6, >tt_pattern7
         dc.b >tt_pattern8, >tt_pattern9, >tt_pattern10, >tt_pattern11
         dc.b >tt_pattern12, >tt_pattern13, >tt_pattern14, >tt_pattern15
-        dc.b >tt_pattern16, >tt_pattern17        
+        dc.b >tt_pattern16, >tt_pattern17, >tt_pattern18, >tt_pattern19
+        
 
 
 ; ---------------------------------------------------------------------
@@ -369,17 +384,17 @@ tt_SequenceTable:
         dc.b $04, $05, $05, $06, $07, $05, $05, $06
         dc.b $08, $05, $05, $06, $07, $05, $05, $06
         dc.b $08, $05, $05, $06, $07, $05, $05, $06
-        dc.b $08, $81
+        dc.b $08, $09, $a9
 
         
         ; ---------- Channel 1 ----------
-        dc.b $09, $0a, $0b, $0a, $0b, $0a, $0b, $0a
-        dc.b $0c, $0d, $0e, $0d, $0f, $0d, $0e, $0d
-        dc.b $10, $0d, $0e, $0d, $0f, $0d, $0e, $0d
-        dc.b $10, $0d, $0d, $0e, $10, $0d, $0e, $0f
-        dc.b $11, $0a, $0b, $0a, $0c, $00, $00, $00
+        dc.b $0a, $0b, $0c, $0b, $0c, $0b, $0c, $0b
+        dc.b $0d, $0e, $0f, $0e, $10, $0e, $0f, $0e
+        dc.b $11, $0e, $0f, $0e, $10, $0e, $0f, $0e
+        dc.b $11, $0e, $0e, $0f, $11, $0e, $0f, $10
+        dc.b $12, $0b, $0c, $0b, $0d, $00, $00, $00
         dc.b $00, $00, $00, $00, $00, $00, $00, $00
-        dc.b $00, $11, $ab
+        dc.b $00, $13, $09, $dd
 
 
         echo "Track size: ", *-tt_TrackDataStart
