@@ -516,8 +516,8 @@ pf_motion:
 x_step_table:
 	dc.b  4,  4,  4,  4,  4,  4,  4,  4
 	dc.b  4,  4,  4,  4,  4,  4,  4,  4
-	dc.b  4,  5,  6,  7,  8,  9, 10, 11
-	dc.b 12, 11, 10,  9,  8,  7,  6,  5
+	dc.b  4,      6,  7,  8,  9, 10, 11 ; avoid double screen
+	dc.b 12, 11, 10,  9,  8,  7,  7,  5, 4 ; finish on a face
 
 y_step_table:
 	dc.b  4,  5,  6,  7,  8,  9, 10, 11
