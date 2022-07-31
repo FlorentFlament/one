@@ -21,11 +21,25 @@ fx_init:	SUBROUTINE
 
 	lda #$00
 	sta pixels_cnt	; moving pixels count - start with 1 pixel
-	lda #$01	; start by tracing trajectory
+	lda #$00	; start without tracing trajectories
 	sta flags
 	rts
 
 fx_state0:	SUBROUTINE
+	lda framecnt
+	cmp #$38
+	bmi .end
+	lda #$00
+	sta framecnt		; Reset framecounter
+	lda flags
+	ora #$01		; Turn on trajectory
+	sta flags
+	inc fx_state
+.end:
+	rts
+
+
+fx_state1:	SUBROUTINE
 	lda framecnt+1
 	cmp #1
 	bcc .end
@@ -36,11 +50,11 @@ fx_state0:	SUBROUTINE
 .end:
 	rts
 
-fx_state1:	SUBROUTINE
+fx_state2:	SUBROUTINE
 	inc fx_state
 	rts
 
-fx_state2:	SUBROUTINE
+fx_state3:	SUBROUTINE
 	lda pixels_cnt
 	cmp #11
 	bne .more_pixels
@@ -57,22 +71,23 @@ fx_state2:	SUBROUTINE
 .end:
 	rts
 
-fx_state3:	SUBROUTINE
+fx_state4:	SUBROUTINE
 	lda framecnt+1
 	cmp #$0c
 	bcc .end
 	lda framecnt
-	cmp #$49
+	cmp #$00
 	bcc .end
 	inc fx_state
 .end:
 	rts
 
-fx_state4:	SUBROUTINE
+fx_state5:	SUBROUTINE
 	;; Alternate tracing and no tracing
 	;; End of fx ?
 	lda framecnt+1
 	and #$1f
+	cmp #$1e
 	bne .continue
 	inc fx_state
 	lda #$1			; Only one pixel
@@ -85,7 +100,7 @@ fx_state4:	SUBROUTINE
 	beq .no_traces
 	lda flags
 	ora #$01		; bit0 (clear fb)->1
-	bne .end
+	bne .end		; inconditional
 .no_traces:
 	lda flags
 	and #$fe		; bit0 ->0
@@ -93,11 +108,22 @@ fx_state4:	SUBROUTINE
 	sta flags
 	rts
 
-fx_state5:
+fx_state6:	SUBROUTINE
 	lda #$1			; don't clear screen anymore
 	sta flags
 	inc fx_state
-fx_state6:
+	rts
+
+fx_state7:	SUBROUTINE
+	lda framecnt+1
+	cmp #$1e
+	bcc .end
+	lda framecnt
+	cmp #$80
+	bcc .end
+	inc fx_state
+.end:
+fx_state8:	SUBROUTINE
 	rts
 
 fx_state_ptrs:
@@ -108,6 +134,8 @@ fx_state_ptrs:
 	.word fx_state4 - 1
 	.word fx_state5 - 1
 	.word fx_state6 - 1
+	.word fx_state7 - 1
+	.word fx_state8 - 1
 
 call_current_state:	SUBROUTINE
 	lda fx_state
@@ -120,8 +148,6 @@ call_current_state:	SUBROUTINE
 	rts
 
 fx_overscan:
-	jsr call_current_state
-
 	;; update random number
 	lda prng
 	XOR_SHIFT
@@ -160,7 +186,7 @@ fx_overscan:
 
 	;; Shape of trajectory
 	lda fx_state
-	cmp #6
+	cmp #7
 	bpl .final_state
 	lda framecnt+1
 	jmp .state_set
@@ -189,6 +215,8 @@ fx_overscan:
 	and #$07
 	sta pf_height
 .skip:
+
+	jsr call_current_state
 	rts
 
 ;;; X and Y shift should be in ptr and ptr+1 respectively
@@ -329,14 +357,16 @@ fx_vblank: SUBROUTINE
 
 fx_kernel:	SUBROUTINE
 	lda fx_state
-	cmp #3
+	cmp #4
 	bpl .second_half
-	cmp #2
+	cmp #3
 	bpl .glitchy
+	cmp #1
+	bmi fx_kernel_intro
 	jmp fx_kernel_blocks
 
 .second_half:
-	cmp #5
+	cmp #6
 	bmi .glitchest
 .end_one:
 	jmp fx_kernel_bars
@@ -352,6 +382,10 @@ fx_kernel:	SUBROUTINE
 	beq fx_kernel_bars	; unconditional
 .trick:
 	jmp fx_kernel_blocks
+
+fx_kernel_intro:	SUBROUTINE
+	rts
+
 fx_kernel_bars:	SUBROUTINE
 	lda pf_height
 	bne .draw_picture
