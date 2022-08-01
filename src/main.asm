@@ -52,7 +52,8 @@ main_loop:	SUBROUTINE
 	lda #39			; (/ (* 34.0 76) 64) = 40.375
 	sta TIM64T
 	lda fx_state
-	cmp #8
+	beq .no_zik		; No music on state 0
+	cmp #9
 	bpl .no_zik
 .do_play:
 	jsr zik_player

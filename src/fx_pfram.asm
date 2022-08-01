@@ -28,6 +28,16 @@ fx_init:	SUBROUTINE
 
 fx_state0:	SUBROUTINE
 	lda framecnt
+	cmp #$38		; 1 second (50 frames) delay
+	bmi .end
+	lda #$00
+	sta framecnt		; Reset framecounter
+	inc fx_state
+.end:
+	rts
+
+fx_state1:	SUBROUTINE
+	lda framecnt
 	cmp #$38
 	bmi .end
 	lda #$00
@@ -42,7 +52,7 @@ fx_state0:	SUBROUTINE
 	rts
 
 
-fx_state1:	SUBROUTINE
+fx_state2:	SUBROUTINE
 	lda framecnt+1
 	cmp #1
 	bcc .end
@@ -53,11 +63,11 @@ fx_state1:	SUBROUTINE
 .end:
 	rts
 
-fx_state2:	SUBROUTINE
+fx_state3:	SUBROUTINE
 	inc fx_state
 	rts
 
-fx_state3:	SUBROUTINE
+fx_state4:	SUBROUTINE
 	lda pixels_cnt
 	cmp #11
 	bne .more_pixels
@@ -74,7 +84,7 @@ fx_state3:	SUBROUTINE
 .end:
 	rts
 
-fx_state4:	SUBROUTINE
+fx_state5:	SUBROUTINE
 	lda framecnt+1
 	cmp #$0c
 	bcc .end
@@ -85,7 +95,7 @@ fx_state4:	SUBROUTINE
 .end:
 	rts
 
-fx_state5:	SUBROUTINE
+fx_state6:	SUBROUTINE
 	;; Alternate tracing and no tracing
 	;; End of fx ?
 	lda framecnt+1
@@ -111,13 +121,13 @@ fx_state5:	SUBROUTINE
 	sta flags
 	rts
 
-fx_state6:	SUBROUTINE
+fx_state7:	SUBROUTINE
 	lda #$1			; don't clear screen anymore
 	sta flags
 	inc fx_state
 	rts
 
-fx_state7:	SUBROUTINE
+fx_state8:	SUBROUTINE
 	lda framecnt+1
 	cmp #$1e
 	bcc .end
@@ -126,7 +136,7 @@ fx_state7:	SUBROUTINE
 	bcc .end
 	inc fx_state
 .end:
-fx_state8:	SUBROUTINE
+fx_state9:	SUBROUTINE
 	rts
 
 fx_state_ptrs:
@@ -139,6 +149,7 @@ fx_state_ptrs:
 	.word fx_state6 - 1
 	.word fx_state7 - 1
 	.word fx_state8 - 1
+	.word fx_state9 - 1
 
 call_current_state:	SUBROUTINE
 	lda fx_state
@@ -189,7 +200,7 @@ fx_overscan:
 
 	;; Shape of trajectory
 	lda fx_state
-	cmp #7
+	cmp #8
 	bpl .final_state
 	lda framecnt+1
 	jmp .state_set
@@ -360,16 +371,16 @@ fx_vblank: SUBROUTINE
 
 fx_kernel:	SUBROUTINE
 	lda fx_state
-	cmp #4
+	cmp #5
 	bpl .second_half
-	cmp #3
+	cmp #4
 	bpl .glitchy
-	cmp #1
+	cmp #2
 	bmi fx_kernel_intro
 	jmp fx_kernel_blocks
 
 .second_half:
-	cmp #6
+	cmp #7
 	bmi .glitchest
 .end_one:
 	jmp fx_kernel_bars
@@ -387,15 +398,16 @@ fx_kernel:	SUBROUTINE
 	jmp fx_kernel_blocks
 
 fx_kernel_intro:	SUBROUTINE
-	sta WSYNC
-	lda #$00
-	sta PF0
-	sta PF1
-	sta PF2
-
+	lda fx_state
+	bne .blink_color
 	lda #$fe
 	sta COLUPF
-
+	bne .continue
+.blink_color:
+	ldx framecnt
+	lda intro_color,X
+	sta COLUPF
+.continue:
 	ldx #29
 .outer:
 	ldy #3
@@ -623,3 +635,13 @@ pf_one_40x30_5:
 	dc.b $03, $02, $00, $02, $03, $00, $00, $00
 	dc.b $00, $00, $00, $00, $02, $02, $02, $03
 	dc.b $02, $02, $02, $00, $00, $00
+
+intro_color:
+	dc.b $fe, $00, $00, $00, $fe, $fe, $fe
+	dc.b $fe, $fe, $fe, $fe, $fe, $fe, $fe
+	dc.b $fe, $00, $00, $00, $fe, $fe, $fe
+	dc.b $fe, $fe, $fe, $fe, $fe, $fe, $fe
+	dc.b $fe, $00, $00, $00, $fe, $fe, $fe
+	dc.b $fe, $00, $00, $00, $fe, $fe, $fe
+	dc.b $fe, $00, $00, $00, $fe, $fe, $fe
+	dc.b $fe, $fe, $fe, $fe, $fe, $fe, $fe
