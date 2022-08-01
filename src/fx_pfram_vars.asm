@@ -21,3 +21,6 @@ flags		DS.B	1	; bit 0 -> clear frame buffer
 				; bit 1 -> Random height
 				; bit 2 -> kernel
 pixels_cnt	DS.B	1	; moving pixels count
+
+sprite_ptr0	DS.B	2
+sprite_ptr1	DS.B	2

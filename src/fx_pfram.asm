@@ -14,6 +14,71 @@
 	eor ptr
     ENDM
 
+;;; Does rough positioning of sprite
+;;; Argument: Id for the sprite (0 or 1)
+;;; A : must contain Horizontal position
+;;; To be used in conjunction with FINE_POSITION_SPRITE
+    MAC ROUGH_POSITION_SPRITE
+	sec
+	; Beware ! this loop must not cross a page !
+	echo "[FX position sprite Loop] P", ({1})d, "start :", *
+.rough_loop:
+	; The rough_loop consumes 15 (5*3) pixels
+	sbc #$0f	      ; 2 cycles
+	bcs .rough_loop ; 3 cycles
+	echo "[FX position sprite Loop] P", ({1})d, "end :", *
+	sta RESP{1}
+    ENDM
+
+;;; Fine position sprite passed as argument
+;;; Argument: Id for the sprite (0 or 1)
+;;; A: must contain the remaining value of rough positioning
+;;; At the end:
+;;; A: is destroyed
+    MAC FINE_POSITION_SPRITE
+	;; A register has value in [-15 .. -1]
+	clc
+	adc #$07 ; A in [-8 .. 6]
+	eor #$ff ; A in [-7 .. 7]
+    REPEAT 4
+	asl
+    REPEND
+	sta HMP{1} ; Fine position of missile or sprite
+    ENDM
+
+;;; Position a sprite
+;;; Argument: Id for the sprite (0 or 1)
+;;; A : must contain Horizontal position
+;;; At the end:
+;;; A: is destroyed
+    MAC POSITION_SPRITE
+	sta WSYNC
+	SLEEP 14
+	ROUGH_POSITION_SPRITE {1}
+	FINE_POSITION_SPRITE {1}
+    ENDM
+
+;;; Position both sprites 0 and 1
+;;; X contains sprite 0 position
+;;; Y contains sprite 1 position
+    MAC POSITION_BOTH_SPRITES
+	txa
+	POSITION_SPRITE 0
+	tya
+	POSITION_SPRITE 1
+	sta WSYNC
+	sta HMOVE		; Commit sprites fine tuning
+    ENDM	
+
+    MAC SET_SPRITE
+	ldx #3
+.init_sprite_ptr:
+	lda {1},X
+	sta sprite_ptr0,X
+	dex
+	bpl .init_sprite_ptr
+    ENDM	
+	
 fx_init:	SUBROUTINE
 	lda #$00
 	sta CTRLPF	; Don't reflect playfield to start with
@@ -22,8 +87,25 @@ fx_init:	SUBROUTINE
 
 	lda #$00
 	sta pixels_cnt	; moving pixels count - start with 1 pixel
-	lda #$00	; start without tracing trajectories
-	sta flags
+	sta flags	; start without tracing trajectories
+
+	lda #0
+	sta fx_state
+
+	lda #$fa
+	sta COLUP0
+	sta COLUP1
+
+	lda #$07
+	sta NUSIZ0
+	sta NUSIZ1
+
+	;; Compute sprites position
+	ldx #48
+	ldy #80
+	POSITION_BOTH_SPRITES
+
+	SET_SPRITE sp_empty_ptr
 	rts
 
 fx_state0:	SUBROUTINE
@@ -88,9 +170,6 @@ fx_state5:	SUBROUTINE
 	lda framecnt+1
 	cmp #$0c
 	bcc .end
-	lda framecnt
-	cmp #$00
-	bcc .end
 	inc fx_state
 .end:
 	rts
@@ -99,7 +178,6 @@ fx_state6:	SUBROUTINE
 	;; Alternate tracing and no tracing
 	;; End of fx ?
 	lda framecnt+1
-	and #$1f
 	cmp #$1e
 	bne .continue
 	inc fx_state
@@ -136,7 +214,79 @@ fx_state8:	SUBROUTINE
 	bcc .end
 	inc fx_state
 .end:
-fx_state9:	SUBROUTINE
+	rts
+	
+fx_state9:	SUBROUTINE	; Static for a quarter cycle
+	lda framecnt+1
+	cmp #$1e
+	bcc .end
+	lda framecnt
+	cmp #$c0
+	bcc .end
+	SET_SPRITE sp_g_16x16_ptr
+	inc fx_state
+.end:	
+	rts
+
+fx_state10:	SUBROUTINE	; Atari logo blinking for a half cycle
+	lda framecnt+1
+	cmp #$1f
+	bcc .end
+	lda framecnt
+	cmp #$40
+	bcc .end
+	SET_SPRITE sp_empty_ptr
+	inc fx_state
+.end:	
+	rts
+
+fx_state11:	SUBROUTINE	; Static for a quarter cycle
+	lda framecnt+1
+	cmp #$1f
+	bcc .end
+	lda framecnt
+	cmp #$80
+	bcc .end
+	SET_SPRITE sp_f_16x16_ptr
+	inc fx_state
+.end:	
+	rts
+
+fx_state12:	SUBROUTINE	; Atari logo blinking for a half cycle
+	lda framecnt+1
+	cmp #$20
+	bcc .end
+	lda framecnt
+	cmp #$00
+	bcc .end
+	SET_SPRITE sp_empty_ptr
+	inc fx_state
+.end:	
+	rts
+	
+fx_state13:	SUBROUTINE	; Static for a quarter cycle
+	lda framecnt+1
+	cmp #$20
+	bcc .end
+	lda framecnt
+	cmp #$40
+	bcc .end
+	SET_SPRITE sp_atari_logo_16x16_ptr
+	inc fx_state
+.end:	
+	rts
+
+fx_state14:	SUBROUTINE	; Atari logo blinking for a half cycle
+	lda framecnt+1
+	cmp #$20
+	bcc .end
+	lda framecnt
+	cmp #$a0
+	bcc .end
+	SET_SPRITE sp_empty_ptr
+	inc fx_state
+.end:
+fx_state15:
 	rts
 
 fx_state_ptrs:
@@ -150,6 +300,12 @@ fx_state_ptrs:
 	.word fx_state7 - 1
 	.word fx_state8 - 1
 	.word fx_state9 - 1
+	.word fx_state10 - 1
+	.word fx_state11 - 1
+	.word fx_state12 - 1
+	.word fx_state13 - 1
+	.word fx_state14 - 1
+	.word fx_state15 - 1
 
 call_current_state:	SUBROUTINE
 	lda fx_state
@@ -348,6 +504,7 @@ fx_vblank: SUBROUTINE
 	sta fb_p1+15
 	rts
 
+;;; Uses ptr
     MAC CHOOSE_COLOR
 	lda framecnt+1
 	sta ptr
@@ -367,7 +524,6 @@ fx_vblank: SUBROUTINE
 	lda pf_colors,X
 	sta COLUPF
     ENDM
-
 
 fx_kernel:	SUBROUTINE
 	lda fx_state
@@ -445,6 +601,17 @@ fx_kernel_intro:	SUBROUTINE
 	rts
 
 fx_kernel_bars:	SUBROUTINE
+	;; Mask for sprites
+	lda flags
+	and #$04
+	beq .draw_sprites
+	lda #$00
+	beq .continue_sprites
+.draw_sprites:
+	lda #$ff
+.continue_sprites:
+	sta ptr+1		; Used as mask for sprites
+
 	lda pf_height
 	bne .draw_picture
 
@@ -478,6 +645,8 @@ fx_kernel_bars:	SUBROUTINE
 	sta PF0
 	sta PF1
 	sta PF2
+	sta GRP0
+	sta GRP1
 	CHOOSE_COLOR
 	sta WSYNC
 	lda fb_p0,Y
@@ -507,6 +676,12 @@ fx_kernel_bars:	SUBROUTINE
 	sta PF1
 	sta PF2
 .next_inner:
+	lda (sprite_ptr0),Y
+	and ptr+1
+	sta GRP0
+	lda (sprite_ptr1),Y
+	and ptr+1
+	sta GRP1
 	dex
 	bne .inner_loop
 
@@ -645,3 +820,55 @@ intro_color:
 	dc.b $fe, $00, $00, $00, $fe, $fe, $fe
 	dc.b $fe, $00, $00, $00, $fe, $fe, $fe
 	dc.b $fe, $fe, $fe, $fe, $fe, $fe, $fe
+
+sp_empty_0:
+	dc.b $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00
+sp_empty_ptr:
+	dc.w sp_empty_0
+	dc.w sp_empty_0
+
+sp_atari_logo_16x16_0:
+	dc.b $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $c1, $31, $19, $0d, $05, $05
+	dc.b $05, $05, $05, $05, $05, $05, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00
+sp_atari_logo_16x16_1:
+	dc.b $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $83, $8c, $98, $b0, $a0, $a0
+	dc.b $a0, $a0, $a0, $a0, $a0, $a0, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00
+sp_atari_logo_16x16_ptr:
+	dc.w sp_atari_logo_16x16_0
+	dc.w sp_atari_logo_16x16_1
+
+
+sp_g_16x16_0:
+	dc.b $00, $00, $00, $00, $00, $00, $00
+	dc.b $3f, $3f, $fc, $fc, $fc, $fc, $fc, $fc
+	dc.b $fc, $fc, $fc, $fc, $fc, $fc, $3f, $3f
+	dc.b $00, $00, $00, $00, $00, $00, $00
+sp_g_16x16_1:
+	dc.b $00, $00, $00, $00, $00, $00, $00
+	dc.b $ff, $ff, $3f, $3f, $3f, $3f, $ff, $ff
+	dc.b $ff, $00, $00, $00, $00, $00, $ff, $ff
+	dc.b $00, $00, $00, $00, $00, $00, $00
+sp_g_16x16_ptr:
+	dc.w sp_g_16x16_0
+	dc.w sp_g_16x16_1
+
+sp_f_16x16_0:
+	dc.b $00, $00, $00, $00, $00, $00, $00
+	dc.b $78, $78, $78, $78, $78, $78, $7f, $7f
+	dc.b $7f, $78, $78, $78, $78, $7f, $1f, $1f
+	dc.b $00, $00, $00, $00, $00, $00, $00
+sp_f_16x16_1:
+	dc.b $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $c0, $c0
+	dc.b $c0, $00, $00, $00, $00, $fe, $fe, $fe
+	dc.b $00, $00, $00, $00, $00, $00, $00
+sp_f_16x16_ptr:
+	dc.w sp_f_16x16_0
+	dc.w sp_f_16x16_1
