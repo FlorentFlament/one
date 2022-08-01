@@ -15,8 +15,9 @@
     ENDM
 
 fx_init:	SUBROUTINE
+	lda #$00
+	sta CTRLPF	; Don't reflect playfield to start with
 	lda #$01
-	sta CTRLPF	; Reflect playfield
 	sta prng	; random number generator seed
 
 	lda #$00
@@ -31,6 +32,8 @@ fx_state0:	SUBROUTINE
 	bmi .end
 	lda #$00
 	sta framecnt		; Reset framecounter
+	lda #$01
+	sta CTRLPF		; Reflect playfield to start with
 	lda flags
 	ora #$01		; Turn on trajectory
 	sta flags
@@ -384,6 +387,49 @@ fx_kernel:	SUBROUTINE
 	jmp fx_kernel_blocks
 
 fx_kernel_intro:	SUBROUTINE
+	sta WSYNC
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+
+	lda #$fe
+	sta COLUPF
+
+	ldx #29
+.outer:
+	ldy #3
+.inner_loop:
+	sta WSYNC
+	lda pf_one_40x30_0,X
+	sta PF0
+	lda pf_one_40x30_1,X
+	sta PF1
+	lda pf_one_40x30_2,X
+	sta PF2
+	SLEEP 10
+	lda pf_one_40x30_3,X
+	sta PF0
+	lda pf_one_40x30_4,X
+	sta PF1
+	lda pf_one_40x30_5,X
+	sta PF2
+	sta WSYNC
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	dey
+	bpl .inner_loop
+	dex
+	bpl .outer
+
+	sta WSYNC
+	lda #$00
+	sta PF0
+	sta PF1
+	sta PF2
+	sta COLUPF
 	rts
 
 fx_kernel_bars:	SUBROUTINE
@@ -509,10 +555,6 @@ fx_kernel_blocks:	SUBROUTINE
 ;;; DATA
 ;;;
 
-pf_motion:
-	dc.b 0, 1, 2, 3, 3, 4, 4, 5
-	dc.b 5, 5, 4, 4, 3, 3, 2, 1
-
 x_step_table:
 	dc.b  4,  4,  4,  4,  4,  4,  4,  4
 	dc.b  4,  4,  4,  4,  4,  4,  4,  4
@@ -550,3 +592,34 @@ sin_table:
 	dc.b $01, $01, $02, $02, $02, $03, $03, $04
 	dc.b $04, $05, $05, $06, $06, $07, $08, $08
 	dc.b $09, $0a, $0a, $0b, $0c, $0c, $0d, $0e
+
+pf_one_40x30_0:
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00, $00, $00
+	dc.b $00, $00, $00, $00, $00, $00
+pf_one_40x30_1:
+	dc.b $00, $00, $00, $00, $3d, $00, $20, $20
+	dc.b $00, $20, $20, $20, $37, $00, $00, $00
+	dc.b $0f, $00, $00, $00, $20, $20, $20, $28
+	dc.b $20, $20, $2c, $00, $00, $00
+pf_one_40x30_2:
+	dc.b $00, $00, $00, $00, $13, $12, $12, $02
+	dc.b $12, $12, $10, $12, $73, $00, $00, $00
+	dc.b $ff, $00, $00, $00, $4d, $41, $41, $41
+	dc.b $41, $41, $41, $00, $00, $00
+pf_one_40x30_3:
+	dc.b $00, $00, $00, $00, $80, $00, $80, $80
+	dc.b $80, $80, $00, $80, $f0, $00, $00, $00
+	dc.b $f0, $00, $00, $00, $30, $20, $20, $20
+	dc.b $20, $20, $20, $00, $00, $00
+pf_one_40x30_4:
+	dc.b $00, $00, $00, $00, $2f, $20, $00, $20
+	dc.b $37, $20, $20, $20, $3b, $00, $00, $00
+	dc.b $ff, $00, $00, $00, $f2, $02, $12, $f2
+	dc.b $02, $82, $f2, $00, $00, $00
+pf_one_40x30_5:
+	dc.b $00, $00, $00, $00, $02, $00, $00, $00
+	dc.b $03, $02, $00, $02, $03, $00, $00, $00
+	dc.b $00, $00, $00, $00, $02, $02, $02, $03
+	dc.b $02, $02, $02, $00, $00, $00
