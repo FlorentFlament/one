@@ -96,11 +96,11 @@ wait_timint:
 	lda TIMINT
 	beq wait_timint
 	rts
-	echo "Main   size:", (* - MAIN_CODE_START)d, "bytes - Music player size"
+	echo "Main size:", (* - MAIN_CODE_START)d, "bytes (including music player)"
 
 FX_START equ *
 	INCLUDE "fx_pfram.asm"
-	echo "FX     size:", (* - FX_START)d, "bytes"
+	echo "FX size:", (* - FX_START)d, "bytes (including fx data)"
 
 	echo ""
 	echo "-TOTAL-"
