@@ -48,8 +48,9 @@ main_loop:	SUBROUTINE
 	VERTICAL_SYNC		; 4 scanlines Vertical Sync signal
 
 .vblank:
-	; 34 VBlank lines (76 cycles/line)
-	lda #39			; (/ (* 34.0 76) 64) = 40.375
+	;; 76 cycles/line
+	;; 38 lines
+	lda #48
 	sta TIM64T
 	lda fx_state
 	beq .no_zik		; No music on state 0
@@ -68,15 +69,15 @@ main_loop:	SUBROUTINE
 	jsr wait_timint
 
 .kernel:
-	; 248 Kernel lines
-	lda #19			; (/ (* 248.0 76) 1024) = 18.40
+	;; 256 lines
+	lda #19
 	sta T1024T
 	jsr fx_kernel		; scanline 33 - cycle 23
 	jsr wait_timint		; scanline 289 - cycle 30
 
 .overscan:
-	; 26 Overscan lines
-	lda #22			; (/ (* 26.0 76) 64) = 30.875
+	;; 18 lines
+	lda #13			; (/ (* 26.0 76) 64) = 30.875
 	sta TIM64T
 	;; Update counters
 	inc framecnt
